@@ -2,11 +2,16 @@
 
 
 
+<img width="1401" height="880" alt="Screenshot (2325)" src="https://github.com/user-attachments/assets/ebdfb421-8e48-4b79-be0d-cb63f391f08a" />
+
+<img width="1404" height="891" alt="Screenshot (2328)" src="https://github.com/user-attachments/assets/1387e594-3c96-438e-96d9-91974a3db0ee" />
+
+<img width="1405" height="892" alt="Screenshot (2329)" src="https://github.com/user-attachments/assets/dd41b7d2-25e7-482d-a3f3-fc2a5e879169" />
 
 
 
 
-<img width="1408" height="885" alt="Screenshot (2318)" src="https://github.com/user-attachments/assets/0a7be248-c407-4af7-9d35-943135e5ec65" />
+
 
 
 
@@ -93,7 +98,7 @@ cd quick-ping-monitor
 
 اول وارد پوشه بک اند شوید و با زدن دکمه شیفت و کلیک راست موس 
 open powershell window here
-vh fhc ;kdn 
+
  موارد زیر را نصب کنید :
 
 cd backend
