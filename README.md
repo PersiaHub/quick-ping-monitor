@@ -79,8 +79,13 @@ npm install
 node server.js
 The core engine will start listening on port 5000.
 
-4. Launch Front-End
-Simply navigate to the frontend directory and open index.html in any modern web browse
+### 4. Launch the Application
+
+Once the backend server is running, you don't need to open the HTML file directly. Simply open your modern web browser and navigate to:
+
+👉 **http://localhost:5000**
+
+This will serve the stunning glassmorphic interface connected directly to your high-performance network diagnostics core.
 
 ⚖️ License
 Distributed under a Proprietary License. Permission is granted for personal usage and execution only. Copying, redistribution, modifying, or removing architecture credits (@PersiaHub) is strictly prohibited. See LICENSE for details.
