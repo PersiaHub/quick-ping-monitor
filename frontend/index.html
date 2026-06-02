@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Network Infrastructure Ping Matrix</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: radial-gradient(circle at top right, #1e293b, #0f172a, #020617);
+        }
+        /* Custom smooth transition engine */
+        .glass-panel {
+            background: rgba(18, 24, 36, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+<body class="text-slate-200 antialiased min-h-screen flex flex-col justify-center items-center p-4 md:p-6">
+
+    <div class="w-full max-w-3xl glass-panel border border-slate-800/80 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.6)] p-6 md:p-8 transition-all duration-500" id="main-container">
+        
+        <header class="mb-8 relative">
+            <div class="absolute -top-4 -left-4 w-12 h-12 bg-blue-500/10 blur-xl rounded-full"></div>
+            <h1 class="text-2xl md:text-3xl font-black text-white tracking-tight flex items-center gap-2">
+                VeloraPing <span class="text-xs font-mono px-2 py-0.5 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-md uppercase tracking-widest">v1.2 Stable</span>
+            </h1>
+            <p class="text-xs md:text-sm text-slate-400 mt-1">Advanced diagnostic layer for tracking Host Pings and TCP Port availability.</p>
+        </header>
+
+        <div class="space-y-4 mb-6">
+            <div class="flex flex-col sm:flex-row gap-3">
+                <input type="text" id="target-host" 
+                       class="flex-[3] bg-[#0f1420]/90 border border-slate-700/60 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all duration-300" 
+                       placeholder="Domain / IP (e.g. 8.8.8.8) or URL (https://google.com)">
+                
+                <input type="number" id="target-port" 
+                       class="flex-[1] bg-[#0f1420]/90 border border-slate-700/60 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all duration-300" 
+                       placeholder="Port (Optional)">
+
+                <button onclick="PingEngine.triggerDiagnostic()" 
+                        class="bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white font-semibold text-sm rounded-xl px-6 py-3 transition-all duration-200 shrink-0 shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2">
+                    <span id="btn-text">Run Diagnostics</span>
+                </button>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2 text-xs text-slate-400">
+                <span class="font-mono text-slate-500">Quick Diagnostics:</span>
+                <button onclick="PingEngine.fillPreset('https://google.com', '')" class="px-2.5 py-1 bg-slate-800/40 border border-slate-700/40 hover:border-slate-500 rounded-md transition-colors">Google Web</button>
+                <button onclick="PingEngine.fillPreset('1.1.1.1', '443')" class="px-2.5 py-1 bg-slate-800/40 border border-slate-700/40 hover:border-slate-500 rounded-md transition-colors">Cloudflare HTTPS</button>
+                <button onclick="PingEngine.fillPreset('8.8.8.8', '')" class="px-2.5 py-1 bg-slate-800/40 border border-slate-700/40 hover:border-slate-500 rounded-md transition-colors">Google DNS</button>
+            </div>
+        </div>
+
+        <div id="result-card" class="hidden border border-slate-800/60 bg-[#0d121f]/90 rounded-2xl p-6 transition-all duration-500 shadow-inner">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center divide-y md:divide-y-0 md:divide-x divide-slate-800/60">
+                <div class="pt-2 md:pt-0 flex flex-col justify-center">
+                    <span class="block text-[11px] font-bold uppercase tracking-widest text-slate-500">Target Host</span>
+                    <span id="res-host" class="block text-sm font-mono text-slate-300 mt-2 truncate px-2">--</span>
+                </div>
+                <div class="pt-2 md:pt-0 flex flex-col justify-center items-center">
+                    <span class="block text-[11px] font-bold uppercase tracking-widest text-slate-500 mb-2">Node Status</span>
+                    <span id="res-status" class="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full">--</span>
+                </div>
+                <div class="pt-2 md:pt-0 flex flex-col justify-center">
+                    <span class="block text-[11px] font-bold uppercase tracking-widest text-slate-500">Latency Time</span>
+                    <span id="res-ping" class="block text-xl font-black text-blue-400 mt-1.5">--</span>
+                </div>
+                <div class="pt-2 md:pt-0 flex flex-col justify-center">
+                    <span class="block text-[11px] font-bold uppercase tracking-widest text-slate-500">Network Code</span>
+                    <span id="res-code" class="block text-sm font-mono text-amber-400 mt-2 font-bold">--</span>
+                </div>
+            </div>
+        </div>
+
+        <footer class="mt-8 pt-4 border-t border-slate-800/40 flex justify-between items-center text-[11px] font-mono text-slate-500">
+            <div>Engine Status: Operational</div>
+            <div>Core Architect: <a href="https://github.com/PersiaHub" target="_blank" class="text-blue-400/80 font-bold hover:text-blue-400 hover:underline transition-all duration-200">@PersiaHub</a></div>
+        </footer>
+
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+    <script>
+        const PingEngine = (() => {
+            // هوشمندسازی آدرس برای کارکرد داینامیک روی شبکه جهانی و سرور واقعی
+            const API_ENDPOINT = '/api/ping';
+
+            return {
+                fillPreset: (host, port) => {
+                    document.getElementById('target-host').value = host;
+                    document.getElementById('target-port').value = port;
+                },
+                triggerDiagnostic: async () => {
+                    const targetInput = document.getElementById('target-host').value.trim();
+                    const portInput = document.getElementById('target-port').value.trim();
+                    const resultCard = document.getElementById('result-card');
+                    const mainContainer = document.getElementById('main-container');
+                    const btnText = document.getElementById('btn-text');
+                    
+                    if (!targetInput) return alert('Target parameter cannot be empty.');
+
+                    // Visual Loading Sequence Architecture
+                    btnText.innerHTML = `<svg class="animate-spin h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Analyzing...`;
+                    resultCard.classList.remove('hidden');
+                    mainContainer.className = mainContainer.className.replace(/border-(emerald|rose)-500\/30/g, 'border-slate-800/80');
+                    
+                    document.getElementById('res-host').innerText = 'Resolving...';
+                    document.getElementById('res-status').className = "inline-flex items-center text-xs font-bold px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 animate-pulse";
+                    document.getElementById('res-status').innerText = 'Handshaking';
+                    document.getElementById('res-ping').innerText = '...';
+                    document.getElementById('res-code').innerText = '...';
+
+                    try {
+                        const response = await fetch(API_ENDPOINT, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ target: targetInput, port: portInput ? portInput : null })
+                        });
+
+                        const data = await response.json();
+
+                        // Reset button state
+                        btnText.innerText = "Run Diagnostics";
+
+                        if (data.success) {
+                            document.getElementById('res-host').innerText = data.port ? `${data.host}:${data.port}` : data.host;
+                            document.getElementById('res-ping').innerText = data.ping;
+                            document.getElementById('res-code').innerText = data.statusCode;
+                            
+                            // Dynamic Accent Injection based on telemetry state
+                            if (data.online) {
+                                document.getElementById('res-status').className = "inline-flex items-center text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+                                document.getElementById('res-status').innerText = data.port ? 'PORT OPEN' : 'ONLINE';
+                                mainContainer.classList.add('border-emerald-500/30');
+                            } else {
+                                document.getElementById('res-status').className = "inline-flex items-center text-xs font-bold px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20";
+                                document.getElementById('res-status').innerText = data.port ? 'BLOCKED' : 'OFFLINE';
+                                mainContainer.classList.add('border-rose-500/30');
+                            }
+                        }
+                    } catch (netError) {
+                        btnText.innerText = "Run Diagnostics";
+                        document.getElementById('res-status').className = "inline-flex items-center text-xs font-bold px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20";
+                        document.getElementById('res-status').innerText = 'GATEWAY OFFLINE';
+                        console.error('[UI Sync Exception]:', netError);
+                    }
+                }
+            };
+        })();
+    </script>
+</body>
+</html>
